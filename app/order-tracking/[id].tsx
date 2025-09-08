@@ -49,22 +49,30 @@ const statusSteps = [
 ];
 
 export default function OrderTrackingScreen() {
-  const { id } = useLocalSearchParams();
+  const { id, orderData: orderDataParam } = useLocalSearchParams();
   const router = useRouter();
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>('confirmed');
   const [estimatedTime, setEstimatedTime] = useState('25-35 min');
 
-  // Mock order data
+  // Parse order data from params or use fallback
+  const parsedOrderData = orderDataParam ? JSON.parse(orderDataParam as string) : null;
+  
+  // Use passed order data or fallback to mock data
   const orderData: OrderTrackingData = {
     orderNumber: id as string,
     status: currentStatus,
     estimatedTime,
-    customerInfo: {
+    customerInfo: parsedOrderData?.customerInfo || {
       name: 'John Doe',
       phone: '+1 (555) 123-4567',
       email: 'john.doe@email.com',
     },
-    deliveryAddress: {
+    deliveryAddress: parsedOrderData?.deliveryAddress ? {
+      street: parsedOrderData.deliveryAddress.address,
+      city: parsedOrderData.deliveryAddress.city,
+      state: parsedOrderData.deliveryAddress.state,
+      zip: parsedOrderData.deliveryAddress.zip,
+    } : {
       street: '123 Main Street',
       city: 'Miami',
       state: 'FL',

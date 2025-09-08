@@ -1,53 +1,32 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import Header from '@/components/layout/Header';
 import CartItem from '@/components/cart/CartItem';
 import Button from '@/components/ui/Button';
 import Colors from '@/constants/Colors';
-
-// Mock cart data
-const initialCartItems = [
-  {
-    id: '1',
-    name: 'Temple Wolf IPA',
-    price: 11,
-    quantity: 1,
-    imageUrl: 'https://images.pexels.com/photos/1552630/pexels-photo-1552630.jpeg',
-  },
-  {
-    id: '4',
-    name: 'American Fries',
-    price: 19,
-    quantity: 1,
-    imageUrl: 'https://images.pexels.com/photos/1893556/pexels-photo-1893556.jpeg',
-  },
-];
+import { useCart } from '@/contexts/CartContext';
 
 export default function CartScreen() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const { items: cartItems, updateQuantity, removeItem } = useCart();
 
   const handleIncrement = (id: string) => {
-    setCartItems(
-      cartItems.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
+    const item = cartItems.find(item => item.id === id);
+    if (item) {
+      updateQuantity(id, item.quantity + 1);
+    }
   };
 
   const handleDecrement = (id: string) => {
-    setCartItems(
-      cartItems.map((item) =>
-        item.id === id && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
+    const item = cartItems.find(item => item.id === id);
+    if (item && item.quantity > 1) {
+      updateQuantity(id, item.quantity - 1);
+    }
   };
 
   const handleRemove = (id: string) => {
-    setCartItems(cartItems.filter((item) => item.id !== id));
+    removeItem(id);
   };
 
   // Calculate subtotal

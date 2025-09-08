@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router/tabs';
 import { StyleSheet, View, Text, Platform } from 'react-native';
-import { Chrome as Home, UtensilsCrossed, ShoppingBag, Clock, User } from 'lucide-react-native';
+import { Home, UtensilsCrossed, ShoppingBag, Clock, User } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
+import CartIconWithBadge from '@/components/ui/CartIconWithBadge';
 
 export default function TabLayout() {
   return (
@@ -38,7 +39,7 @@ export default function TabLayout() {
         options={{
           title: 'Cart',
           tabBarIcon: ({ color, size }) => (
-            <ShoppingBag size={size} color={color} />
+            <CartIconWithBadge color={color} size={size} />
           ),
         }}
       />

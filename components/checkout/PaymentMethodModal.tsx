@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { X, CreditCard, Plus } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
@@ -128,7 +129,11 @@ export default function PaymentMethodModal({
         transparent={true}
         onRequestClose={onClose}
       >
-        <View style={styles.modalContainer}>
+        <KeyboardAvoidingView 
+          style={styles.modalContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
           <View style={styles.modalContent}>
             <View style={styles.header}>
               <TouchableOpacity onPress={() => setShowAddNew(false)}>
@@ -140,7 +145,12 @@ export default function PaymentMethodModal({
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content}>
+            <ScrollView 
+              style={styles.content}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Cardholder Name</Text>
                 <TextInput
@@ -217,7 +227,7 @@ export default function PaymentMethodModal({
               />
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     );
   }
@@ -317,6 +327,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   paymentCard: {
     backgroundColor: Colors.background.tertiary,

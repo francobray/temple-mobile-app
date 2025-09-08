@@ -64,7 +64,29 @@ export default function CheckoutScreen() {
   const handlePlaceOrder = () => {
     // Generate random order number
     const orderNumber = Math.floor(Math.random() * 900000) + 100000;
-    router.push(`/order-tracking/${orderNumber}`);
+    
+    // Prepare order data to pass to tracking screen
+    const orderData = {
+      orderNumber,
+      customerInfo,
+      deliveryAddress: selectedAddress,
+      deliveryOption,
+      paymentMethod: selectedPayment,
+      specialInstructions,
+      total,
+      subtotal,
+      tax,
+      deliveryFee
+    };
+    
+    // Store order data (in a real app, this would be saved to a database)
+    // For now, we'll use AsyncStorage or a similar approach
+    router.push({
+      pathname: `/order-tracking/${orderNumber}`,
+      params: {
+        orderData: JSON.stringify(orderData)
+      }
+    });
   };
 
   const handleAddressChange = () => {

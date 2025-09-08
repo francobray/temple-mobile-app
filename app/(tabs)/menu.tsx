@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import CategoryButton from '@/components/menu/CategoryButton';
 import MenuItem, { MenuItemProps } from '@/components/menu/MenuItem';
 import Colors from '@/constants/Colors';
+import { useCart } from '@/contexts/CartContext';
 
 // Mock data for categories
 const categories = [
@@ -85,6 +86,7 @@ const menuItems = [
 
 export default function MenuScreen() {
   const router = useRouter();
+  const { addItem } = useCart();
   const params = useLocalSearchParams();
   const initialCategory = params.category as string || 'all';
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -99,6 +101,15 @@ export default function MenuScreen() {
 
   const handleMenuItemPress = (itemId: string) => {
     router.push(`/menu/${itemId}`);
+  };
+
+  const handleAddToCart = (item: typeof menuItems[0]) => {
+    addItem({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      imageUrl: item.imageUrl,
+    });
   };
 
   return (
@@ -130,6 +141,7 @@ export default function MenuScreen() {
             <MenuItem
               {...item}
               onPress={() => handleMenuItemPress(item.id)}
+              onAddToCart={() => handleAddToCart(item)}
             />
           )}
           contentContainerStyle={styles.menuList}
