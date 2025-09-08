@@ -6,7 +6,8 @@ import {
   ScrollView, 
   TouchableOpacity, 
   Platform,
-  TextInput
+  TextInput,
+  KeyboardAvoidingView
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MapPin, CreditCard, Clock, ChevronRight, User } from 'lucide-react-native';
@@ -50,7 +51,6 @@ export default function CheckoutScreen() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(paymentMethods[0]);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [specialInstructions, setSpecialInstructions] = useState('');
   const [customerInfo, setCustomerInfo] = useState({
     name: 'John Doe',
     phone: '+1 (555) 123-4567',
@@ -79,7 +79,6 @@ export default function CheckoutScreen() {
       deliveryAddress: selectedAddress,
       deliveryOption,
       paymentMethod: selectedPayment,
-      specialInstructions,
       total,
       subtotal,
       tax,
@@ -236,21 +235,6 @@ export default function CheckoutScreen() {
     </View>
   );
 
-  const renderSpecialInstructions = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Special Instructions</Text>
-      <TextInput
-        style={styles.instructionsInput}
-        placeholder="Add any special instructions..."
-        value={specialInstructions}
-        onChangeText={setSpecialInstructions}
-        multiline
-        numberOfLines={3}
-        placeholderTextColor={Colors.text.tertiary}
-      />
-    </View>
-  );
-
   const renderOrderSummary = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Order Summary</Text>
@@ -279,19 +263,24 @@ export default function CheckoutScreen() {
     <View style={styles.container}>
       <Header title="Checkout" showBackButton />
       
-      <ScrollView 
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {renderDeliveryOptions()}
         {renderCustomerInfo()}
         {renderAddressSection()}
         {renderPaymentSection()}
         {renderDeliveryTime()}
-        {renderSpecialInstructions()}
         {renderOrderSummary()}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <AddressSelectionModal
         visible={showAddressModal}
@@ -323,6 +312,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background.primary,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -446,18 +438,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: 16,
     color: Colors.text.primary,
-  },
-  instructionsInput: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 16,
-    color: Colors.text.primary,
-    borderWidth: 1,
-    borderColor: Colors.background.tertiary,
-    borderRadius: 8,
-    padding: 12,
-    height: 100,
-    textAlignVertical: 'top',
-    backgroundColor: Colors.background.tertiary,
   },
   summaryRow: {
     flexDirection: 'row',
