@@ -15,6 +15,7 @@ import AddressSelectionModal from '@/components/checkout/AddressSelectionModal';
 import PaymentMethodModal from '@/components/checkout/PaymentMethodModal';
 import Button from '@/components/ui/Button';
 import Colors from '@/constants/Colors';
+import { useLoyalty } from '@/contexts/LoyaltyContext';
 
 // Mock data for saved addresses and payment methods
 const savedAddresses = [
@@ -43,6 +44,7 @@ type Address = typeof savedAddresses[0];
 
 export default function CheckoutScreen() {
   const router = useRouter();
+  const { awardPoints, calculateOrderPoints } = useLoyalty();
   const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('delivery');
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(savedAddresses[0]);
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(paymentMethods[0]);
@@ -64,10 +66,15 @@ export default function CheckoutScreen() {
   const handlePlaceOrder = () => {
     // Generate random order number
     const orderNumber = Math.floor(Math.random() * 900000) + 100000;
+    const orderNumberStr = `TMP-2024-${orderNumber.toString().slice(-3)}`;
+    
+    // Calculate and award loyalty points
+    const pointsEarned = calculateOrderPoints(total);
+    awardPoints(pointsEarned, `Order #${orderNumberStr}`, orderNumberStr);
     
     // Prepare order data to pass to tracking screen
     const orderData = {
-      orderNumber,
+      orderNumber: orderNumberStr,
       customerInfo,
       deliveryAddress: selectedAddress,
       deliveryOption,
@@ -76,13 +83,14 @@ export default function CheckoutScreen() {
       total,
       subtotal,
       tax,
-      deliveryFee
+      deliveryFee,
+      pointsEarned
     };
     
     // Store order data (in a real app, this would be saved to a database)
     // For now, we'll use AsyncStorage or a similar approach
     router.push({
-      pathname: `/order-tracking/${orderNumber}`,
+      pathname: `/order-tracking/${orderNumberStr}`,
       params: {
         orderData: JSON.stringify(orderData)
       }

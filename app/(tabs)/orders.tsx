@@ -5,6 +5,8 @@ import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
 import Colors from '@/constants/Colors';
 import { Clock, ShoppingBag, MapPin, Star } from 'lucide-react-native';
+import { useLoyalty } from '@/contexts/LoyaltyContext';
+import { useCart } from '@/contexts/CartContext';
 
 // Mock order data with Temple branding
 const orders = [
@@ -96,6 +98,9 @@ interface OrderCardProps {
 }
 
 function OrderCard({ order, onReorder, onViewDetails, onRate }: OrderCardProps) {
+  const { getTransactionsByOrder } = useLoyalty();
+  const orderTransactions = getTransactionsByOrder(order.orderNumber);
+  const pointsEarned = orderTransactions.find(t => t.type === 'earned')?.points || Math.floor(order.total);
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Delivered':
@@ -137,7 +142,9 @@ function OrderCard({ order, onReorder, onViewDetails, onRate }: OrderCardProps) 
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
             <Text style={styles.statusText}>{order.status}</Text>
           </View>
-          <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
+          <View style={styles.orderTotalContainer}>
+            <Text style={styles.orderTotal}>${order.total.toFixed(2)}</Text>
+          </View>
         </View>
       </View>
 
@@ -146,8 +153,9 @@ function OrderCard({ order, onReorder, onViewDetails, onRate }: OrderCardProps) 
         <View style={styles.itemsHeader}>
           <Text style={styles.itemsTitle}>Items ({order.items.length})</Text>
           {order.status === 'Delivered' && (
-            <View style={styles.ratingContainer}>
-              {renderStars(order.rating)}
+            <View style={styles.pointsEarnedLarge}>
+              <Star size={16} color={Colors.secondary.main} fill={Colors.secondary.main} />
+              <Text style={styles.pointsEarnedLargeText}>+{pointsEarned} pts</Text>
             </View>
           )}
         </View>
@@ -198,10 +206,31 @@ function OrderCard({ order, onReorder, onViewDetails, onRate }: OrderCardProps) 
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const { addItem } = useCart();
   const [activeTab, setActiveTab] = useState<'current' | 'past'>('past');
 
   const handleReorder = (orderId: string) => {
-    // In a real app, this would add items to cart
+    // Find the order by ID
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    // Add all items from the order to the cart
+    order.items.forEach(item => {
+      // Add each item the correct number of times based on quantity
+      for (let i = 0; i < item.quantity; i++) {
+        addItem({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          imageUrl: item.imageUrl,
+          restaurant: order.restaurant,
+          category: 'Food', // Default category
+          description: '', // Default description
+        });
+      }
+    });
+
+    // Navigate to cart to show the added items
     router.push('/cart');
   };
 
@@ -435,6 +464,9 @@ const styles = StyleSheet.create({
     color: Colors.white,
     textTransform: 'uppercase',
   },
+  orderTotalContainer: {
+    alignItems: 'flex-end',
+  },
   orderTotal: {
     fontFamily: 'Montserrat-Bold',
     fontSize: 20,
@@ -454,9 +486,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.primary,
   },
-  ratingContainer: {
+  pointsEarnedLarge: {
     flexDirection: 'row',
-    gap: 2,
+    alignItems: 'center',
+    backgroundColor: Colors.secondary.main + '20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  pointsEarnedLargeText: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 14,
+    color: Colors.secondary.main,
+    marginLeft: 6,
   },
   itemsList: {
     gap: 12,

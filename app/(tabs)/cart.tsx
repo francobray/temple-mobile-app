@@ -6,10 +6,13 @@ import CartItem from '@/components/cart/CartItem';
 import Button from '@/components/ui/Button';
 import Colors from '@/constants/Colors';
 import { useCart } from '@/contexts/CartContext';
+import { useLoyalty } from '@/contexts/LoyaltyContext';
+import { Star } from 'lucide-react-native';
 
 export default function CartScreen() {
   const router = useRouter();
   const { items: cartItems, updateQuantity, removeItem } = useCart();
+  const { calculateOrderPoints } = useLoyalty();
 
   const handleIncrement = (id: string) => {
     const item = cartItems.find(item => item.id === id);
@@ -43,6 +46,9 @@ export default function CartScreen() {
 
   // Calculate total
   const total = subtotal + deliveryFee + tax;
+
+  // Calculate points to be earned
+  const pointsToEarn = calculateOrderPoints(total);
 
   const handleCheckout = () => {
     router.push('/checkout');
@@ -98,6 +104,20 @@ export default function CartScreen() {
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+              </View>
+            </View>
+
+            {/* Loyalty Points Preview */}
+            <View style={styles.loyaltyContainer}>
+              <View style={styles.loyaltyHeader}>
+                <Star size={20} color={Colors.secondary.main} fill={Colors.secondary.main} />
+                <Text style={styles.loyaltyTitle}>You'll Earn Points</Text>
+              </View>
+              <View style={styles.pointsPreview}>
+                <Text style={styles.pointsPreviewText}>+{pointsToEarn} pts</Text>
+                <Text style={styles.pointsSubtext}>
+                  Complete this order to earn {pointsToEarn} loyalty points!
+                </Text>
               </View>
             </View>
             
@@ -183,6 +203,41 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat-Bold',
     fontSize: 18,
     color: Colors.primary.main,
+  },
+  loyaltyContainer: {
+    backgroundColor: Colors.background.card,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.secondary.main + '30',
+  },
+  loyaltyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  loyaltyTitle: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 16,
+    color: Colors.text.primary,
+    marginLeft: 8,
+  },
+  pointsPreview: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  pointsPreviewText: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 24,
+    color: Colors.secondary.main,
+    marginBottom: 4,
+  },
+  pointsSubtext: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    color: Colors.text.secondary,
+    textAlign: 'center',
   },
   checkoutButton: {
     marginBottom: 40,

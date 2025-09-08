@@ -9,12 +9,14 @@ import {
   ImageBackground
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ShoppingBag, Star, MapPin, ChevronDown } from 'lucide-react-native';
+import { ShoppingBag, Star, MapPin, ChevronDown, Gift, UtensilsCrossed } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Card from '@/components/ui/Card';
 import LocationSelectionModal from '@/components/home/LocationSelectionModal';
 import PickupDeliveryModal from '@/components/home/PickupDeliveryModal';
+import SignUpModal from '@/components/auth/SignUpModal';
 import { useCart } from '@/contexts/CartContext';
+import { useLoyalty } from '@/contexts/LoyaltyContext';
 
 // Mock data for popular items
 const popularItems = [
@@ -71,9 +73,11 @@ const popularItems = [
 export default function HomeScreen() {
   const router = useRouter();
   const { addItem } = useCart();
-  const [loyaltyPoints] = useState(740);
+  const { points: loyaltyPoints } = useLoyalty();
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showPickupDeliveryModal, setShowPickupDeliveryModal] = useState(false);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Mock authentication state
   const [selectedLocation, setSelectedLocation] = useState({
     id: '1',
     name: 'Temple Brickell',
@@ -127,12 +131,122 @@ export default function HomeScreen() {
     // For now, the cart badge will update immediately to show feedback
   };
 
+  const handleSignUp = (data: any) => {
+    // Mock signup - in real app this would call an API
+    console.log('Sign up data:', data);
+    setIsLoggedIn(true);
+    setShowSignUpModal(false);
+  };
+
+  const handleLogin = () => {
+    // Mock login - in real app this would navigate to login screen
+    console.log('Login pressed');
+    setIsLoggedIn(true);
+  };
+
+  const handleGoogleSignUp = () => {
+    // Mock Google signup
+    console.log('Google signup pressed');
+    setIsLoggedIn(true);
+    setShowSignUpModal(false);
+  };
+
+  const handleAppleSignUp = () => {
+    // Mock Apple signup
+    console.log('Apple signup pressed');
+    setIsLoggedIn(true);
+    setShowSignUpModal(false);
+  };
+
+  // Render login/signup overlay for non-logged-in users
+  const renderAuthOverlay = () => (
+    <View style={styles.authOverlay}>
+      <ImageBackground
+        source={{ uri: 'https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg' }}
+        style={styles.authBackground}
+        resizeMode="cover"
+      >
+        <View style={styles.authOverlayContent}>
+          {/* Location Banner */}
+          <View style={styles.locationBanner}>
+            <Text style={styles.locationBannerText}>
+              {selectedLocation.name}
+            </Text>
+            <Text style={styles.locationBannerSubtext}>
+              {orderType === 'pickup' ? 'Pickup' : 'Delivery'} in {estimatedTime}
+            </Text>
+          </View>
+
+          {/* Benefits Section */}
+          <View style={styles.authBenefitsContainer}>
+            <View style={styles.authBenefitItem}>
+              <Gift size={24} color={Colors.white} />
+              <Text style={styles.authBenefitText}>Earn points with every order</Text>
+            </View>
+
+            <View style={styles.authBenefitItem}>
+              <UtensilsCrossed size={24} color={Colors.white} />
+              <Text style={styles.authBenefitText}>Redeem points for free food</Text>
+            </View>
+
+            <View style={styles.authBenefitItem}>
+              <Star size={24} color={Colors.white} />
+              <Text style={styles.authBenefitText}>Receive exclusive discounts</Text>
+            </View>
+          </View>
+
+          {/* CTA Buttons */}
+          <View style={styles.authButtonsContainer}>
+            <TouchableOpacity
+              style={styles.signUpButton}
+              onPress={() => setShowSignUpModal(true)}
+            >
+              <Text style={styles.signUpButtonText}>Sign Up</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={handleLogin}
+            >
+              <Text style={styles.loginButtonText}>Log In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ImageBackground>
+
+      {/* Recommended Section (visible to non-logged-in users) */}
+      <ScrollView style={styles.authRecommendedScroll}>
+        <View style={styles.authRecommendedContainer}>
+          <Text style={styles.authRecommendedTitle}>Recommended</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.authRecommendedItems}
+          >
+            {popularItems.slice(0, 3).map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.authRecommendedItem}
+                onPress={() => setShowSignUpModal(true)} // Prompt signup when trying to interact
+              >
+                <Image source={{ uri: item.imageUrl }} style={styles.authRecommendedImage} />
+                <Text style={styles.authRecommendedItemName}>{item.name}</Text>
+                <Text style={styles.authRecommendedItemPrice}>${item.price.toFixed(2)}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      {!isLoggedIn ? renderAuthOverlay() : (
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
         {/* Header */}
         <View style={styles.header}>
           <Image 
@@ -294,6 +408,7 @@ export default function HomeScreen() {
         </View>
 
       </ScrollView>
+      )}
 
       <LocationSelectionModal
         visible={showLocationModal}
@@ -307,6 +422,14 @@ export default function HomeScreen() {
         onClose={() => setShowPickupDeliveryModal(false)}
         onSelect={handleOrderTypeSelect}
         locationName={selectedLocation.name}
+      />
+
+      <SignUpModal
+        visible={showSignUpModal}
+        onClose={() => setShowSignUpModal(false)}
+        onSignUp={handleSignUp}
+        onGoogleSignUp={handleGoogleSignUp}
+        onAppleSignUp={handleAppleSignUp}
       />
     </View>
   );
@@ -586,5 +709,133 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat-SemiBold',
     fontSize: 12,
     color: Colors.white,
+  },
+  // Authentication overlay styles
+  authOverlay: {
+    flex: 1,
+  },
+  authBackground: {
+    flex: 1,
+    minHeight: 500,
+  },
+  authOverlayContent: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
+  locationBanner: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 40,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  locationBannerText: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 18,
+    color: Colors.grey[900],
+    marginBottom: 4,
+  },
+  locationBannerSubtext: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    color: Colors.grey[700],
+  },
+  authBenefitsContainer: {
+    marginBottom: 40,
+  },
+  authBenefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  authBenefitText: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 16,
+    color: Colors.white,
+    marginLeft: 16,
+  },
+  authButtonsContainer: {
+    gap: 12,
+  },
+  signUpButton: {
+    backgroundColor: Colors.primary.main,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  signUpButtonText: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 16,
+    color: Colors.white,
+  },
+  loginButton: {
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.grey[300],
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  loginButtonText: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 16,
+    color: Colors.grey[900],
+  },
+  authRecommendedScroll: {
+    backgroundColor: Colors.background.primary,
+  },
+  authRecommendedContainer: {
+    padding: 20,
+  },
+  authRecommendedTitle: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 24,
+    color: Colors.text.primary,
+    marginBottom: 16,
+  },
+  authRecommendedItems: {
+    gap: 16,
+  },
+  authRecommendedItem: {
+    width: 200,
+    backgroundColor: Colors.background.card,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  authRecommendedImage: {
+    width: '100%',
+    height: 120,
+  },
+  authRecommendedItemName: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 16,
+    color: Colors.text.primary,
+    padding: 12,
+    paddingBottom: 4,
+  },
+  authRecommendedItemPrice: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 16,
+    color: Colors.primary.main,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
 });

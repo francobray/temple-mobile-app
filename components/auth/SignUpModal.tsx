@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { X, Gift, UtensilsCrossed, Star } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
@@ -16,6 +17,8 @@ interface SignUpModalProps {
   visible: boolean;
   onClose: () => void;
   onSignUp: (data: SignUpData) => void;
+  onGoogleSignUp?: () => void;
+  onAppleSignUp?: () => void;
 }
 
 interface SignUpData {
@@ -27,7 +30,7 @@ interface SignUpData {
   smsOptIn: boolean;
 }
 
-export default function SignUpModal({ visible, onClose, onSignUp }: SignUpModalProps) {
+export default function SignUpModal({ visible, onClose, onSignUp, onGoogleSignUp, onAppleSignUp }: SignUpModalProps) {
   const [formData, setFormData] = useState<SignUpData>({
     firstName: '',
     lastName: '',
@@ -88,6 +91,40 @@ export default function SignUpModal({ visible, onClose, onSignUp }: SignUpModalP
             </View>
 
             <View style={styles.form}>
+              {onAppleSignUp && (
+                <TouchableOpacity
+                  style={styles.appleSignUpButton}
+                  onPress={onAppleSignUp}
+                >
+                  <Image
+                    source={require('@/assets/images/apple-logo.png')}
+                    style={{ width: 20, height: 20 }}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.appleSignUpButtonText}>Sign in with Apple</Text>
+                </TouchableOpacity>
+              )}
+
+              {onGoogleSignUp && (
+                <TouchableOpacity
+                  style={styles.googleSignUpButton}
+                  onPress={onGoogleSignUp}
+                >
+                  <Image
+                    source={require('@/assets/images/google-logo.png')}
+                    style={{ width: 20, height: 20 }}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.googleSignUpButtonText}>Continue with Google</Text>
+                </TouchableOpacity>
+              )}
+
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
               <View style={styles.row}>
                 <TextInput
                   style={[styles.input, styles.halfInput]}
@@ -286,6 +323,59 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.grey[800],
     flex: 1,
+  },
+  appleSignUpButton: {
+    backgroundColor: Colors.black,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  appleSignUpButtonText: {
+    color: Colors.white,
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  googleSignUpButton: {
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.grey[300],
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  googleSignUpButtonText: {
+    color: Colors.grey[700],
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.grey[300],
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: Colors.grey[500],
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
   },
   signUpButton: {
     backgroundColor: '#00C853',

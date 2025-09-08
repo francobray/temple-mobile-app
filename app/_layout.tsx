@@ -17,6 +17,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import LoadingScreen from '@/components/layout/LoadingScreen';
 import { CartProvider } from '@/contexts/CartContext';
+import { LoyaltyProvider } from '@/contexts/LoyaltyContext';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -60,13 +61,15 @@ export default function RootLayout() {
   }
 
   return (
-    <CartProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="light" />
-    </CartProvider>
+    <LoyaltyProvider>
+      <CartProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="light" />
+      </CartProvider>
+    </LoyaltyProvider>
   );
 }

@@ -8,7 +8,7 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { MapPin, Clock, Phone, MessageCircle, User } from 'lucide-react-native';
+import { MapPin, Clock, Phone, MessageCircle, User, Star } from 'lucide-react-native';
 import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
 import Colors from '@/constants/Colors';
@@ -286,6 +286,33 @@ export default function OrderTrackingScreen() {
     </View>
   );
 
+  const renderLoyaltyPoints = () => {
+    const pointsEarned = parsedOrderData?.pointsEarned;
+    
+    if (!pointsEarned) return null;
+
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Star size={20} color={Colors.secondary.main} />
+          <Text style={styles.sectionTitle}>Loyalty Points Earned</Text>
+        </View>
+        <View style={styles.loyaltyPointsContainer}>
+          <View style={styles.pointsEarnedBadge}>
+            <Star size={24} color={Colors.secondary.main} fill={Colors.secondary.main} />
+            <Text style={styles.pointsEarnedText}>+{pointsEarned} pts</Text>
+          </View>
+          <Text style={styles.pointsDescription}>
+            You earned {pointsEarned} loyalty points with this order!
+          </Text>
+          <Text style={styles.pointsSubtext}>
+            Keep ordering to earn more points and unlock rewards.
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Header title="Order Tracking" showBackButton />
@@ -297,9 +324,10 @@ export default function OrderTrackingScreen() {
       >
         {renderStatusProgress()}
         {renderTrackingMap()}
+        {renderDriverInfo()}
         {renderCustomerInfo()}
         {renderDeliveryAddress()}
-        {renderDriverInfo()}
+        {renderLoyaltyPoints()}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -634,5 +662,37 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat-SemiBold',
     fontSize: 16,
     color: Colors.text.secondary,
+  },
+  loyaltyPointsContainer: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  pointsEarnedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.secondary.main + '20',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  pointsEarnedText: {
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 18,
+    color: Colors.secondary.main,
+    marginLeft: 8,
+  },
+  pointsDescription: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 16,
+    color: Colors.text.primary,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  pointsSubtext: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    color: Colors.text.secondary,
+    textAlign: 'center',
   },
 });
