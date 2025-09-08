@@ -11,6 +11,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MapPin, Clock, Phone, MessageCircle, User, Star } from 'lucide-react-native';
 import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
+import DeliveryMap from '@/components/tracking/DeliveryMap';
+import { useDeliveryTracking } from '@/hooks/useDeliveryTracking';
 import Colors from '@/constants/Colors';
 
 type OrderStatus = 'placed' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered';
@@ -86,6 +88,13 @@ export default function OrderTrackingScreen() {
     } : undefined,
     realTimeTracking: currentStatus === 'out_for_delivery',
   };
+
+  // Use delivery tracking hook for real-time map data
+  const deliveryTrackingData = useDeliveryTracking({
+    orderStatus: currentStatus,
+    deliveryAddress: orderData.deliveryAddress,
+    estimatedTime,
+  });
 
   // Simulate order status progression
   useEffect(() => {
@@ -262,27 +271,37 @@ export default function OrderTrackingScreen() {
 
   const renderTrackingMap = () => (
     <View style={styles.section}>
-      <View style={styles.mapPlaceholder}>
-        <MapPin size={40} color={Colors.text.tertiary} />
-        <Text style={styles.mapPlaceholderText}>
+      <View style={styles.sectionHeader}>
+        <MapPin size={20} color={Colors.primary.main} />
+        <Text style={styles.sectionTitle}>
           {orderData.realTimeTracking 
-            ? `${orderData.driver?.name} is on the way`
-            : 'Real-time tracking coming soon'
+            ? 'Live Tracking'
+            : 'Delivery Route'
           }
         </Text>
-        <Text style={styles.mapSubtext}>
-          {orderData.realTimeTracking
-            ? '21 mins • 8.2 mi away'
-            : 'Once your food is out for delivery, we\'ll show you the driver\'s location and route in real-time on this map.'
-          }
-        </Text>
-        <View style={styles.currentStatusContainer}>
-          <Clock size={16} color={Colors.text.secondary} />
-          <Text style={styles.currentStatusText}>
-            Current status: {statusSteps[getStatusIndex(currentStatus)]?.label}
+      </View>
+      
+      <DeliveryMap
+        restaurantLocation={deliveryTrackingData.restaurantLocation}
+        deliveryAddress={deliveryTrackingData.deliveryAddress}
+        driverLocation={deliveryTrackingData.driverLocation}
+        isDriverAssigned={deliveryTrackingData.isDriverAssigned}
+        estimatedTime={deliveryTrackingData.estimatedTime}
+      />
+      
+      {orderData.realTimeTracking && (
+        <View style={styles.trackingStatus}>
+          <View style={styles.trackingStatusRow}>
+            <View style={styles.trackingDot} />
+            <Text style={styles.trackingStatusText}>
+              {orderData.driver?.name} is on the way to your location
+            </Text>
+          </View>
+          <Text style={styles.trackingSubtext}>
+            You can track your driver's location in real-time
           </Text>
         </View>
-      </View>
+      )}
     </View>
   );
 
@@ -608,41 +627,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  mapPlaceholder: {
-    alignItems: 'center',
-    padding: 40,
+  trackingStatus: {
+    marginTop: 12,
+    padding: 12,
     backgroundColor: Colors.background.tertiary,
     borderRadius: 8,
   },
-  mapPlaceholderText: {
-    fontFamily: 'Montserrat-SemiBold',
-    fontSize: 16,
-    color: Colors.text.primary,
-    textAlign: 'center',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  mapSubtext: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: Colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  currentStatusContainer: {
+  trackingStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background.card,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    marginBottom: 4,
   },
-  currentStatusText: {
-    fontFamily: 'Poppins-Medium',
+  trackingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.secondary.main,
+    marginRight: 8,
+  },
+  trackingStatusText: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 14,
+    color: Colors.text.primary,
+    flex: 1,
+  },
+  trackingSubtext: {
+    fontFamily: 'Poppins-Regular',
     fontSize: 12,
     color: Colors.text.secondary,
-    marginLeft: 4,
+    marginLeft: 16,
   },
   footer: {
     backgroundColor: Colors.background.card,

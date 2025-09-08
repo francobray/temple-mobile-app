@@ -14,22 +14,31 @@ export default function CartScreen() {
   const { items: cartItems, updateQuantity, removeItem } = useCart();
   const { calculateOrderPoints } = useLoyalty();
 
-  const handleIncrement = (id: string) => {
-    const item = cartItems.find(item => item.id === id);
+  // Generate unique key for cart items (includes options)
+  const getCartItemKey = (item: any) => {
+    return `${item.id}-${JSON.stringify(item.options || {})}`;
+  };
+
+  const handleIncrement = (id: string, options?: any) => {
+    const item = cartItems.find(item => 
+      item.id === id && JSON.stringify(item.options || {}) === JSON.stringify(options || {})
+    );
     if (item) {
-      updateQuantity(id, item.quantity + 1);
+      updateQuantity(id, item.quantity + 1, options);
     }
   };
 
-  const handleDecrement = (id: string) => {
-    const item = cartItems.find(item => item.id === id);
+  const handleDecrement = (id: string, options?: any) => {
+    const item = cartItems.find(item => 
+      item.id === id && JSON.stringify(item.options || {}) === JSON.stringify(options || {})
+    );
     if (item && item.quantity > 1) {
-      updateQuantity(id, item.quantity - 1);
+      updateQuantity(id, item.quantity - 1, options);
     }
   };
 
-  const handleRemove = (id: string) => {
-    removeItem(id);
+  const handleRemove = (id: string, options?: any) => {
+    removeItem(id, options);
   };
 
   // Calculate subtotal
@@ -75,11 +84,11 @@ export default function CartScreen() {
           <>
             {cartItems.map((item) => (
               <CartItem
-                key={item.id}
+                key={getCartItemKey(item)}
                 {...item}
-                onIncrement={() => handleIncrement(item.id)}
-                onDecrement={() => handleDecrement(item.id)}
-                onRemove={() => handleRemove(item.id)}
+                onIncrement={() => handleIncrement(item.id, item.options)}
+                onDecrement={() => handleDecrement(item.id, item.options)}
+                onRemove={() => handleRemove(item.id, item.options)}
               />
             ))}
             

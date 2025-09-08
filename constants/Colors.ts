@@ -17,6 +17,12 @@ export default {
     dark: '#1976D2',
     contrast: '#FFFFFF',
   },
+  accent: {
+    main: '#9C27B0',  // Purple accent for delivery markers
+    light: '#BA68C8',
+    dark: '#7B1FA2',
+    contrast: '#FFFFFF',
+  },
   success: {
     main: '#4CAF50',
     light: '#81C784',

@@ -9,6 +9,7 @@ interface CartItemProps {
   price: number;
   quantity: number;
   imageUrl: string;
+  options?: { [key: string]: any };
   onIncrement: () => void;
   onDecrement: () => void;
   onRemove: () => void;
@@ -19,10 +20,39 @@ export default function CartItem({
   price,
   quantity,
   imageUrl,
+  options,
   onIncrement,
   onDecrement,
   onRemove,
 }: CartItemProps) {
+  // Format options for display
+  const formatOptions = () => {
+    if (!options) return null;
+    
+    const optionTexts: string[] = [];
+    
+    // Add main options (size, sauce, dressing, etc.)
+    Object.entries(options).forEach(([key, value]) => {
+      if (key === 'extras') return; // Handle extras separately
+      if (value && typeof value === 'object' && value.name) {
+        optionTexts.push(value.name);
+      }
+    });
+    
+    // Add extras
+    if (options.extras && Array.isArray(options.extras)) {
+      options.extras.forEach((extra: any) => {
+        if (extra.name) {
+          optionTexts.push(`+ ${extra.name}`);
+        }
+      });
+    }
+    
+    return optionTexts.length > 0 ? optionTexts.join(', ') : null;
+  };
+
+  const optionsText = formatOptions();
+
   return (
     <View style={styles.container}>
       <Image
@@ -32,6 +62,9 @@ export default function CartItem({
       />
       <View style={styles.detailsContainer}>
         <Text style={styles.name}>{name}</Text>
+        {optionsText && (
+          <Text style={styles.options}>{optionsText}</Text>
+        )}
         <Text style={styles.price}>${price.toFixed(2)}</Text>
         
         <View style={styles.quantityContainer}>
@@ -88,6 +121,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 4,
     color: Colors.text.primary,
+  },
+  options: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 13,
+    color: Colors.text.secondary,
+    marginBottom: 4,
+    lineHeight: 18,
   },
   price: {
     fontFamily: 'Montserrat-Bold',

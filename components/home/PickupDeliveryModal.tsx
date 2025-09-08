@@ -5,16 +5,23 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
-import { X, ShoppingBag, Truck, Clock } from 'lucide-react-native';
+import { X, ShoppingBag, Truck, Clock, Calendar } from 'lucide-react-native';
 import Colors from '@/constants/Colors';
 import Button from '@/components/ui/Button';
 
 interface PickupDeliveryModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelect: (type: 'pickup' | 'delivery', time?: string) => void;
+  onSelect: (type: 'pickup' | 'delivery', time?: string, date?: string) => void;
   locationName: string;
+}
+
+interface DeliveryDateTime {
+  date: string;
+  time: string;
+  isASAP: boolean;
 }
 
 export default function PickupDeliveryModal({
@@ -25,8 +32,13 @@ export default function PickupDeliveryModal({
 }: PickupDeliveryModalProps) {
   const [selectedType, setSelectedType] = useState<'pickup' | 'delivery'>('pickup');
   const [selectedTime, setSelectedTime] = useState<string>('ASAP');
+  const [deliveryDateTime, setDeliveryDateTime] = useState<DeliveryDateTime>({
+    date: 'today',
+    time: 'ASAP',
+    isASAP: true,
+  });
 
-  const timeOptions = [
+  const pickupTimeOptions = [
     'ASAP',
     '15 min',
     '30 min', 
@@ -34,9 +46,105 @@ export default function PickupDeliveryModal({
     '1 hour',
   ];
 
+  // Generate next 7 days including today
+  const generateDateOptions = () => {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 8; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      const dayName = i === 0 ? 'Today' : 
+                     i === 1 ? 'Tomorrow' : 
+                     date.toLocaleDateString('en-US', { weekday: 'long' });
+      
+      const dateStr = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      dates.push({
+        key: i === 0 ? 'today' : date.toISOString().split('T')[0],
+        label: dayName,
+        date: dateStr,
+        fullDate: date,
+      });
+    }
+    
+    return dates;
+  };
+
+  const generateTimeSlots = () => {
+    const times = ['ASAP'];
+    const now = new Date();
+    const isToday = deliveryDateTime.date === 'today';
+    
+    // Generate time slots from 11 AM to 10 PM
+    for (let hour = 11; hour <= 22; hour++) {
+      const time = new Date();
+      time.setHours(hour, 0, 0, 0);
+      
+      // If it's today, only show future times (at least 30 min from now)
+      if (isToday) {
+        const minTime = new Date(now.getTime() + 30 * 60000); // 30 minutes from now
+        if (time < minTime) continue;
+      }
+      
+      const timeStr = time.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+      
+      times.push(timeStr);
+    }
+    
+    return times;
+  };
+
+  const dateOptions = generateDateOptions();
+  const timeSlots = generateTimeSlots();
+
+  // Reset state when modal opens
+  React.useEffect(() => {
+    if (visible) {
+      setSelectedType('pickup');
+      setSelectedTime('ASAP');
+      setDeliveryDateTime({
+        date: 'today',
+        time: 'ASAP',
+        isASAP: true,
+      });
+    }
+  }, [visible]);
+
   const handleConfirm = () => {
-    onSelect(selectedType, selectedTime);
+    if (selectedType === 'delivery') {
+      const timeString = deliveryDateTime.isASAP ? 'ASAP' : 
+                        `${deliveryDateTime.time} on ${dateOptions.find(d => d.key === deliveryDateTime.date)?.label}`;
+      onSelect(selectedType, timeString, deliveryDateTime.date);
+    } else {
+      onSelect(selectedType, selectedTime);
+    }
     onClose();
+  };
+
+  const handleDeliveryDateSelect = (dateKey: string) => {
+    setDeliveryDateTime(prev => ({
+      ...prev,
+      date: dateKey,
+      time: 'ASAP',
+      isASAP: true,
+    }));
+  };
+
+  const handleDeliveryTimeSelect = (time: string) => {
+    setDeliveryDateTime(prev => ({
+      ...prev,
+      time,
+      isASAP: time === 'ASAP',
+    }));
   };
 
   return (
@@ -56,7 +164,12 @@ export default function PickupDeliveryModal({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.content}>
+          <ScrollView 
+            style={styles.scrollView} 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.content}>
             <Text style={styles.locationText}>
               From: {locationName}
             </Text>
@@ -113,33 +226,111 @@ export default function PickupDeliveryModal({
               </TouchableOpacity>
             </View>
 
-            <View style={styles.timeSection}>
-              <View style={styles.timeSectionHeader}>
-                <Clock size={20} color={Colors.text.primary} />
-                <Text style={styles.timeSectionTitle}>When do you want it?</Text>
+            {/* Pickup Time Selection */}
+            {selectedType === 'pickup' && (
+              <View style={styles.timeSection}>
+                <View style={styles.timeSectionHeader}>
+                  <Clock size={20} color={Colors.text.primary} />
+                  <Text style={styles.timeSectionTitle}>When do you want it?</Text>
+                </View>
+                
+                <View style={styles.timeOptions}>
+                  {pickupTimeOptions.map((time) => (
+                    <TouchableOpacity
+                      key={time}
+                      style={[
+                        styles.timeOption,
+                        selectedTime === time && styles.selectedTimeOption,
+                      ]}
+                      onPress={() => setSelectedTime(time)}
+                    >
+                      <Text style={[
+                        styles.timeOptionText,
+                        selectedTime === time && styles.selectedTimeOptionText,
+                      ]}>
+                        {time}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-              
-              <View style={styles.timeOptions}>
-                {timeOptions.map((time) => (
-                  <TouchableOpacity
-                    key={time}
-                    style={[
-                      styles.timeOption,
-                      selectedTime === time && styles.selectedTimeOption,
-                    ]}
-                    onPress={() => setSelectedTime(time)}
+            )}
+
+            {/* Delivery Date & Time Selection */}
+            {selectedType === 'delivery' && (
+              <View style={styles.deliveryScheduling}>
+                <View style={styles.timeSectionHeader}>
+                  <Clock size={20} color={Colors.text.primary} />
+                  <Text style={styles.timeSectionTitle}>When do you want it?</Text>
+                </View>
+
+                {/* Date Selection */}
+                <View style={styles.dateSection}>
+                  <View style={styles.dateSectionHeader}>
+                    <Calendar size={16} color={Colors.text.secondary} />
+                    <Text style={styles.dateSectionTitle}>Select Date</Text>
+                  </View>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.dateOptions}
                   >
-                    <Text style={[
-                      styles.timeOptionText,
-                      selectedTime === time && styles.selectedTimeOptionText,
-                    ]}>
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                    {dateOptions.map((date) => (
+                      <TouchableOpacity
+                        key={date.key}
+                        style={[
+                          styles.dateOption,
+                          deliveryDateTime.date === date.key && styles.selectedDateOption,
+                        ]}
+                        onPress={() => handleDeliveryDateSelect(date.key)}
+                      >
+                        <Text style={[
+                          styles.dateOptionLabel,
+                          deliveryDateTime.date === date.key && styles.selectedDateOptionLabel,
+                        ]}>
+                          {date.label}
+                        </Text>
+                        <Text style={[
+                          styles.dateOptionDate,
+                          deliveryDateTime.date === date.key && styles.selectedDateOptionDate,
+                        ]}>
+                          {date.date}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Time Selection */}
+                <View style={styles.timeSection}>
+                  <View style={styles.dateSectionHeader}>
+                    <Clock size={16} color={Colors.text.secondary} />
+                    <Text style={styles.dateSectionTitle}>Select Time</Text>
+                  </View>
+                  <View style={styles.timeOptions}>
+                    {timeSlots.map((time) => (
+                      <TouchableOpacity
+                        key={time}
+                        style={[
+                          styles.timeOption,
+                          deliveryDateTime.time === time && styles.selectedTimeOption,
+                        ]}
+                        onPress={() => handleDeliveryTimeSelect(time)}
+                      >
+                        <Text style={[
+                          styles.timeOptionText,
+                          deliveryDateTime.time === time && styles.selectedTimeOptionText,
+                        ]}>
+                          {time}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
               </View>
+            )}
             </View>
-          </View>
+          </ScrollView>
 
           <View style={styles.footer}>
             <Button
@@ -165,7 +356,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.primary,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '85%',
+    height: '80%',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
@@ -186,6 +383,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingBottom: 40,
   },
   locationText: {
     fontFamily: 'Poppins-Regular',
@@ -195,7 +393,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   optionsContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   optionCard: {
     backgroundColor: Colors.background.card,
@@ -276,5 +474,56 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     paddingTop: 0,
+  },
+  deliveryScheduling: {
+    marginBottom: 20,
+  },
+  dateSection: {
+    marginBottom: 24,
+  },
+  dateSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dateSectionTitle: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 14,
+    color: Colors.text.secondary,
+    marginLeft: 6,
+  },
+  dateOptions: {
+    paddingHorizontal: 4,
+    gap: 12,
+  },
+  dateOption: {
+    backgroundColor: Colors.background.card,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    minWidth: 80,
+    borderWidth: 2,
+    borderColor: Colors.background.tertiary,
+  },
+  selectedDateOption: {
+    borderColor: Colors.primary.main,
+    backgroundColor: Colors.primary.light + '10',
+  },
+  dateOptionLabel: {
+    fontFamily: 'Montserrat-SemiBold',
+    fontSize: 14,
+    color: Colors.text.primary,
+    marginBottom: 4,
+  },
+  selectedDateOptionLabel: {
+    color: Colors.primary.main,
+  },
+  dateOptionDate: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: Colors.text.secondary,
+  },
+  selectedDateOptionDate: {
+    color: Colors.primary.main,
   },
 });

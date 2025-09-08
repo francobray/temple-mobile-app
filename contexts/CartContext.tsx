@@ -6,14 +6,14 @@ export interface CartItem {
   price: number;
   quantity: number;
   imageUrl: string;
-  options?: { [key: string]: string };
+  options?: { [key: string]: any };
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addItem: (item: CartItem) => void;
+  removeItem: (id: string, options?: { [key: string]: any }) => void;
+  updateQuantity: (id: string, quantity: number, options?: { [key: string]: any }) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -36,7 +36,7 @@ interface CartProviderProps {
 export function CartProvider({ children }: CartProviderProps) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  const addItem = (newItem: Omit<CartItem, 'quantity'>) => {
+  const addItem = (newItem: CartItem) => {
     setItems(currentItems => {
       // Find existing item with same id and options
       const existingItem = currentItems.find(item => 
@@ -45,34 +45,46 @@ export function CartProvider({ children }: CartProviderProps) {
       );
       
       if (existingItem) {
-        // Increase quantity of existing item
+        // Increase quantity of existing item by the new item's quantity
         return currentItems.map(item =>
           item.id === newItem.id && 
           JSON.stringify(item.options || {}) === JSON.stringify(newItem.options || {})
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + newItem.quantity }
             : item
         );
       }
       
       // Add new item to cart
-      return [...currentItems, { ...newItem, quantity: 1 }];
+      return [...currentItems, newItem];
     });
   };
 
-  const removeItem = (id: string) => {
-    setItems(currentItems => currentItems.filter(item => item.id !== id));
+  const removeItem = (id: string, options?: { [key: string]: any }) => {
+    setItems(currentItems => 
+      currentItems.filter(item => {
+        if (item.id !== id) return true;
+        if (options) {
+          return JSON.stringify(item.options || {}) !== JSON.stringify(options);
+        }
+        return false;
+      })
+    );
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number, options?: { [key: string]: any }) => {
     if (quantity <= 0) {
-      removeItem(id);
+      removeItem(id, options);
       return;
     }
 
     setItems(currentItems =>
-      currentItems.map(item =>
-        item.id === id ? { ...item, quantity } : item
-      )
+      currentItems.map(item => {
+        if (item.id !== id) return item;
+        if (options && JSON.stringify(item.options || {}) !== JSON.stringify(options)) {
+          return item;
+        }
+        return { ...item, quantity };
+      })
     );
   };
 

@@ -13,6 +13,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Minus, Plus } from 'lucide-react-native';
 import Header from '@/components/layout/Header';
 import Button from '@/components/ui/Button';
+import { useCart } from '@/contexts/CartContext';
 import Colors from '@/constants/Colors';
 
 // Mock data for menu items
@@ -322,6 +323,7 @@ export default function MenuItemDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { id } = params;
+  const { addItem } = useCart();
   
   const menuItem = menuItems.find(item => item.id === id);
   
@@ -329,6 +331,7 @@ export default function MenuItemDetailsScreen() {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [selectedExtras, setSelectedExtras] = useState<Record<string, boolean>>({});
   const [scrollY] = useState(new Animated.Value(0));
+  const [validationMessage, setValidationMessage] = useState<string>('');
   
   if (!menuItem) {
     return (
@@ -355,6 +358,8 @@ export default function MenuItemDetailsScreen() {
       ...prev,
       [optionId]: itemId,
     }));
+    // Clear validation message when user makes a selection
+    setValidationMessage('');
   };
 
   const handleExtraToggle = (extraId: string) => {
@@ -387,6 +392,89 @@ export default function MenuItemDetailsScreen() {
     }
 
     return total;
+  };
+
+  const validateRequiredOptions = () => {
+    const requiredOptions = menuItem.options.filter(option => option.required);
+    
+    for (const option of requiredOptions) {
+      if (!selectedOptions[option.id]) {
+        return { isValid: false, missingOption: option.name };
+      }
+    }
+    
+    return { isValid: true };
+  };
+
+  const handleAddToCart = () => {
+    const validation = validateRequiredOptions();
+    
+    if (!validation.isValid) {
+      // Show validation message to user
+      const message = `Please select a ${validation.missingOption} before adding to cart.`;
+      setValidationMessage(message);
+      // Clear message after 3 seconds
+      setTimeout(() => setValidationMessage(''), 3000);
+      return;
+    }
+    
+    // Clear any previous validation message
+    setValidationMessage('');
+
+    // Build options object for the cart item
+    const itemOptions: Record<string, any> = {};
+    
+    // Add selected options
+    Object.entries(selectedOptions).forEach(([optionId, itemId]) => {
+      const option = menuItem.options.find(opt => opt.id === optionId);
+      if (option) {
+        const selectedItem = option.items.find(item => item.id === itemId);
+        if (selectedItem) {
+          itemOptions[optionId] = {
+            id: selectedItem.id,
+            name: selectedItem.name,
+            price: selectedItem.price,
+          };
+        }
+      }
+    });
+
+    // Add selected extras
+    const selectedExtrasArray: any[] = [];
+    Object.entries(selectedExtras).forEach(([extraId, isSelected]) => {
+      if (isSelected) {
+        const extrasOption = menuItem.options.find(opt => opt.id === 'extras');
+        if (extrasOption) {
+          const extra = extrasOption.items.find(item => item.id === extraId);
+          if (extra) {
+            selectedExtrasArray.push({
+              id: extra.id,
+              name: extra.name,
+              price: extra.price,
+            });
+          }
+        }
+      }
+    });
+
+    if (selectedExtrasArray.length > 0) {
+      itemOptions.extras = selectedExtrasArray;
+    }
+
+    // Add item to cart
+    const cartItem = {
+      id: menuItem.id,
+      name: menuItem.name,
+      price: calculateTotalPrice(),
+      imageUrl: menuItem.imageUrl,
+      quantity,
+      options: itemOptions,
+    };
+
+    addItem(cartItem);
+    
+    // Navigate back to menu after adding to cart
+    router.back();
   };
 
   const headerOpacity = scrollY.interpolate({
@@ -522,11 +610,18 @@ export default function MenuItemDetailsScreen() {
         </View>
         <Button
           title="Add to Cart"
-          onPress={() => router.push('/cart')}
+          onPress={handleAddToCart}
           size="lg"
           style={styles.addButton}
         />
       </View>
+      
+      {/* Validation Message */}
+      {validationMessage ? (
+        <View style={styles.validationMessageContainer}>
+          <Text style={styles.validationMessage}>{validationMessage}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -723,5 +818,24 @@ const styles = StyleSheet.create({
   },
   backButton: {
     width: 200,
+  },
+  validationMessageContainer: {
+    backgroundColor: Colors.error.main,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    position: 'absolute',
+    bottom: 120, // Position above the footer
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  validationMessage: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: Colors.white,
+    textAlign: 'center',
   },
 });

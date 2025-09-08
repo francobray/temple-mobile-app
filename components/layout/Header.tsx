@@ -27,11 +27,14 @@ export default function Header({
         {showBackButton && (
           <TouchableOpacity 
             onPress={() => router.back()} 
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              transparent ? styles.transparentBackButton : styles.solidBackButton
+            ]}
           >
             <ChevronLeft 
               size={28} 
-              color={transparent ? Colors.white : Colors.white} 
+              color={transparent ? Colors.black : Colors.white} 
             />
           </TouchableOpacity>
         )}
@@ -104,5 +107,19 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  transparentBackButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  solidBackButton: {
+    backgroundColor: Colors.background.tertiary,
   },
 });

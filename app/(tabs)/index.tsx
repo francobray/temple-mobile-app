@@ -112,10 +112,14 @@ export default function HomeScreen() {
     setSelectedLocation(location);
   };
 
-  const handleOrderTypeSelect = (type: 'pickup' | 'delivery', time?: string) => {
+  const handleOrderTypeSelect = (type: 'pickup' | 'delivery', time?: string, date?: string) => {
     setOrderType(type);
     if (time) {
       setEstimatedTime(time);
+    }
+    // You can store the selected date if needed for future use
+    if (date && type === 'delivery') {
+      console.log('Selected delivery date:', date);
     }
   };
 
@@ -168,14 +172,17 @@ export default function HomeScreen() {
       >
         <View style={styles.authOverlayContent}>
           {/* Location Banner */}
-          <View style={styles.locationBanner}>
+          <TouchableOpacity 
+            style={styles.locationBanner}
+            onPress={handleLocationPress}
+          >
             <Text style={styles.locationBannerText}>
               {selectedLocation.name}
             </Text>
             <Text style={styles.locationBannerSubtext}>
               {orderType === 'pickup' ? 'Pickup' : 'Delivery'} in {estimatedTime}
             </Text>
-          </View>
+          </TouchableOpacity>
 
           {/* Benefits Section */}
           <View style={styles.authBenefitsContainer}>
@@ -468,7 +475,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     overflow: 'hidden',
-    height: 280,
+    height: 300, // Increased from 280 to 300 to accommodate the button
   },
   loyaltyHeroBackground: {
     width: '100%',
@@ -484,6 +491,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    paddingBottom: 24, // Extra bottom padding to ensure button isn't cut off
   },
   loyaltyNotification: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
